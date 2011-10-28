@@ -19,6 +19,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// Modified by David Duffett
+// It now catches HttpRequestValidationExceptions thrown by .NET 4.0
+// when trying to access the Request.QueryString and Request.Form properties.
+// These exceptions are logged without this data, but at least do not
+// cause logging to fail.
+//
 #endregion
 
 using System.Diagnostics;
