@@ -21,6 +21,8 @@
 //
 #endregion
 
+using System.Diagnostics;
+
 [assembly: Elmah.Scc("$Id: Error.cs 776 2011-01-12 21:09:24Z azizatif $")]
 
 namespace Elmah
@@ -132,9 +134,25 @@ namespace Elmah
                 HttpRequest request = context.Request;
 
                 _serverVariables = CopyCollection(request.ServerVariables);
-                _queryString = CopyCollection(request.QueryString);
-                _form = CopyCollection(request.Form);
                 _cookies = CopyCollection(request.Cookies);
+
+                try
+                {
+                    _queryString = CopyCollection(request.QueryString);
+                    _form = CopyCollection(request.Form);
+                }
+                catch (HttpRequestValidationException requestValidationException)
+                {
+                    //
+                    // .NET 4.0 will raise this exception if dangerous content is
+                    // detected in the request QueryString or Form collections.
+                    // In these cases, we will continue to log the exception without
+                    // the QueryString or Form data.  We cannot get to this data without
+                    // targeting the .NET 4.0 framework and accessing the UnvalidatedRequestValues.
+                    //
+
+                    Trace.WriteLine(requestValidationException);
+                }
             }
         }
 
