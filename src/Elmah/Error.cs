@@ -28,6 +28,7 @@
 #endregion
 
 using System.Diagnostics;
+using System.Text;
 
 [assembly: Elmah.Scc("$Id: Error.cs 776 2011-01-12 21:09:24Z azizatif $")]
 
@@ -105,7 +106,7 @@ namespace Elmah
             _typeName = baseException.GetType().FullName;
             _message = baseException.Message;
             _source = baseException.Source;
-            _detail = e.ToString();
+            _detail = getExceptionDetail(e, baseException);
             _user = Thread.CurrentPrincipal.Identity.Name ?? string.Empty;
             _time = DateTime.Now;
 
@@ -160,6 +161,30 @@ namespace Elmah
                     Trace.WriteLine(requestValidationException);
                 }
             }
+        }
+
+        /// <summary>
+        /// Coalesce the exception ToString() methods. Some specific circumstances (AutoMapperMappingException 
+        /// coupled with NHibernate lazy load collection) can cause ToString() on exception to fail.
+        /// We then attempt to report on the base exception, or as much as we possibly can.
+        /// </summary>
+        string getExceptionDetail(params Exception[] exceptionsToCoalesce)
+        {
+            StringBuilder detail = new StringBuilder();
+            foreach(var exception in exceptionsToCoalesce)
+                try
+                {
+                    detail.Append(exception.ToString());
+                    break;
+                }
+                catch (Exception loggingException)
+                {
+                    detail.AppendFormat(
+                        "Error logging outer exception details for type '{0}':\r\n" +
+                        "  {1}\r\n" +
+                        "  \r\n", exception.GetType().Name, loggingException);
+                }
+            return detail.ToString();
         }
 
         /// <summary>
